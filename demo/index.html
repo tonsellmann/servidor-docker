@@ -18,7 +18,7 @@
   .diagrama svg { display: block; min-width: 720px; width: 100%; height: auto; }
   .grade { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 20px; }
   @media (max-width: 900px) { .grade { grid-template-columns: minmax(0, 1fr); } }
-  .terminal { margin: 0; padding: 16px 18px; border-radius: var(--raio); background: var(--terminal); color: #c9d6e3; font: 13.5px/1.7 var(--mono); overflow-x: auto; }
+  .terminal { margin: 0; padding: 16px 18px; border-radius: var(--raio); background: var(--terminal); color: #c9d6e3; font: 13.5px/1.7 var(--mono); white-space: pre-wrap; }
   .terminal .ok { color: #6fdc9a; }
   .terminal .falhou { color: #ff8f8f; }
   .terminal .comando { color: #8fb6ff; }
@@ -72,7 +72,7 @@
       <g stroke="#5a6675" stroke-width="1.8" fill="none" marker-end="url(#seta)">
         <path d="M130 155H196"/><path d="M390 140C430 140 430 80 466 80"/><path d="M390 170C430 170 430 230 466 230"/>
         <path d="M680 80H746"/><path d="M680 230H746"/>
-        <path d="M845 124V288" stroke-dasharray="4 4"/><path d="M845 274V288" stroke-dasharray="4 4"/>
+        <path d="M940 80C962 80 962 309 944 309" stroke-dasharray="4 4"/><path d="M845 274V288" stroke-dasharray="4 4"/>
       </g>
       <text x="163" y="145" font-family="ui-monospace, monospace" font-size="12" fill="#5a6675" text-anchor="middle">80 · 443</text>
     </svg>
