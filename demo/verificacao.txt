@@ -1,0 +1,21 @@
+ok   a pilha sobe e todos os serviços ficam saudáveis
+ok   HTTP redireciona para HTTPS
+ok   a tela do garçom abre por HTTPS
+ok   HSTS e nosniff no cabeçalho
+ok   o servidor não se anuncia
+ok   o evento chega pelo SSE em menos de 3 segundos, através do Caddy
+ok   o mesmo comando duas vezes executa uma vez só
+ok   o painel responde ao /saude
+ok   o painel pede login
+ok   a página de login abre, com cookie de sessão seguro
+ok   os estáticos saem do Caddy
+ok   os testes do painel passam dentro da imagem
+ok   jaqueira não roda como root
+ok   conferencia não roda como root
+ok   backup não roda como root
+ok   o sistema de arquivos do contêiner é somente leitura
+ok   o backup roda sem erro com os sistemas no ar
+ok   a cópia do banco das comandas abre e tem a mesa aberta
+ok   o painel também tem cópia
+ok   depois de reiniciar, o salão continua no mesmo evento
+20 de 20 conferências passaram.
