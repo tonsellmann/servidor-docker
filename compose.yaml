@@ -68,10 +68,28 @@ services:
     tmpfs: [/tmp]
     mem_limit: 512m
 
+  # No Linux, o Docker cria a pasta dos backups como root, e o backup roda como o usuário 10001.
+  # Este passo roda uma vez, entrega a pasta a ele e sai; só ele tem o poder de trocar o dono.
+  preparar-backups:
+    build: ./backup
+    image: backup-sqlite:local
+    user: "0"
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt: ["no-new-privileges:true"]
+    command: ["chown", "10001:10001", "/backups"]
+    volumes:
+      - ${PASTA_DOS_BACKUPS:-./backups}:/backups
+    restart: "no"
+
   backup:
     build: ./backup
     image: backup-sqlite:local
     <<: *endurecido
+    depends_on:
+      preparar-backups:
+        condition: service_completed_successfully
     environment:
       INTERVALO_HORAS: ${BACKUP_INTERVALO_HORAS:-6}
       MANTER_DIAS: ${BACKUP_MANTER_DIAS:-14}
