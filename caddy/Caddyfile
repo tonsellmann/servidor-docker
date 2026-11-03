@@ -1,0 +1,40 @@
+# O Caddy pede e renova os certificados HTTPS sozinho (Let's Encrypt) e manda o HTTP para o HTTPS.
+# Em teste, TLS_CADDY='tls internal' usa a autoridade certificadora interna dele.
+{
+	email {$EMAIL_ACME}
+}
+
+(seguranca) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		# Não anunciar o servidor.
+		-Server
+	}
+	encode zstd gzip
+	{$TLS_CADDY:}
+}
+
+{$DOMINIO_JAQUEIRA} {
+	import seguranca
+	# O SSE das telas: o Caddy repassa cada evento na hora, sem segurar em buffer.
+	reverse_proxy /api/eventos jaqueira:3000 {
+		flush_interval -1
+	}
+	reverse_proxy jaqueira:3000
+}
+
+{$DOMINIO_CONFERENCIA} {
+	import seguranca
+	# Os estáticos do Django (CSS do painel e do admin) saem direto do Caddy.
+	handle_path /static/* {
+		root * /srv/estaticos
+		file_server
+	}
+	# Os extratos de um mês cabem em 10 MB.
+	request_body {
+		max_size 12MB
+	}
+	reverse_proxy conferencia:8000
+}

@@ -1,0 +1,95 @@
+# Os sistemas num servidor só: o Caddy na frente (HTTPS automático), as comandas da Jaqueira (Node),
+# o painel de conferência (Django) e o backup dos bancos.
+#
+#   cp .env.exemplo .env      e ajuste os domínios
+#   sh segredos/criar.sh      gera o segredo do Django (fora do git)
+#   docker compose up -d --build
+#
+# O código de cada sistema vem do repositório dele, ao lado deste (veja o README).
+
+x-endurecido: &endurecido
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    <<: *endurecido
+    # O Caddy precisa abrir as portas 80 e 443.
+    cap_add: [NET_BIND_SERVICE]
+    ports:
+      - "${PORTA_HTTP:-80}:80"
+      - "${PORTA_HTTPS:-443}:443"
+      - "${PORTA_HTTPS:-443}:443/udp"
+    environment:
+      DOMINIO_JAQUEIRA: ${DOMINIO_JAQUEIRA:?defina no .env}
+      DOMINIO_CONFERENCIA: ${DOMINIO_CONFERENCIA:?defina no .env}
+      EMAIL_ACME: ${EMAIL_ACME:?defina no .env}
+      TLS_CADDY: ${TLS_CADDY:-}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - estaticos:/srv/estaticos:ro
+      - caddy-dados:/data
+      - caddy-config:/config
+    tmpfs: [/tmp]
+    depends_on:
+      jaqueira: { condition: service_healthy }
+      conferencia: { condition: service_healthy }
+    mem_limit: 128m
+
+  jaqueira:
+    build: ${FONTE_JAQUEIRA:-../jaqueira-comandas-node}
+    image: jaqueira-comandas:local
+    <<: *endurecido
+    volumes:
+      - jaqueira-dados:/dados
+    tmpfs: [/tmp]
+    mem_limit: 256m
+    # Sem porta publicada: só o Caddy fala com ele, pela rede interna.
+
+  conferencia:
+    build: ${FONTE_CONFERENCIA:-../conferencia-maquininhas-python}
+    image: conferencia-maquininhas:local
+    <<: *endurecido
+    environment:
+      # O domínio, para o Caddy; 127.0.0.1, para o healthcheck de dentro do contêiner.
+      HOSTS: ${DOMINIO_CONFERENCIA},127.0.0.1
+      ORIGENS: https://${DOMINIO_CONFERENCIA}${SUFIXO_DA_PORTA:-}
+      SEGREDO_ARQUIVO: /run/secrets/segredo_conferencia
+    secrets: [segredo_conferencia]
+    volumes:
+      - conferencia-dados:/dados
+      - estaticos:/estaticos
+    tmpfs: [/tmp]
+    mem_limit: 512m
+
+  backup:
+    build: ./backup
+    image: backup-sqlite:local
+    <<: *endurecido
+    environment:
+      INTERVALO_HORAS: ${BACKUP_INTERVALO_HORAS:-6}
+      MANTER_DIAS: ${BACKUP_MANTER_DIAS:-14}
+    volumes:
+      # Leitura e escrita: a cópia "online" do SQLite precisa do arquivo -shm do modo WAL.
+      - jaqueira-dados:/fontes/jaqueira
+      - conferencia-dados:/fontes/conferencia
+      - ${PASTA_DOS_BACKUPS:-./backups}:/backups
+    tmpfs: [/tmp]
+    mem_limit: 128m
+
+volumes:
+  jaqueira-dados:
+  conferencia-dados:
+  estaticos:
+  caddy-dados:
+  caddy-config:
+
+secrets:
+  segredo_conferencia:
+    file: ./segredos/conferencia.txt

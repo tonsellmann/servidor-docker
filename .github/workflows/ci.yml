@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pilha:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # O código de cada sistema vem do repositório dele.
+      - uses: actions/checkout@v4
+        with:
+          repository: tonsellmann/jaqueira-comandas-node
+          path: fontes/jaqueira
+      - uses: actions/checkout@v4
+        with:
+          repository: tonsellmann/conferencia-maquininhas-python
+          path: fontes/conferencia
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: docker compose --env-file testes/teste.env config --quiet
+      - run: node testes/verificar.mjs
+        env:
+          FONTE_JAQUEIRA: ./fontes/jaqueira
+          FONTE_CONFERENCIA: ./fontes/conferencia
